@@ -1,18 +1,20 @@
 ---
 layout: page
-title: About
+title: About me
 permalink: /about/
 ---
 
-This is the base Jekyll theme. You can find out more info about customizing your Jekyll theme, as well as basic Jekyll usage documentation at [jekyllrb.com](https://jekyllrb.com/)
-
-You can find the source code for Minima at GitHub:
-[jekyll][jekyll-organization] /
-[minima](https://github.com/jekyll/minima)
-
-You can find the source code for Jekyll at GitHub:
-[jekyll][jekyll-organization] /
-[jekyll](https://github.com/jekyll/jekyll)
+### Android developer from land of steppe.
+Lived in Sapporo for some years. I do talk at [tech conferences]({{ site.baseurl }}{% post_url 2018-07-19-mvvm-from-theories-to-test %}).
 
 
-[jekyll-organization]: https://github.com/jekyll
+Right now I'm working on classified projects as lead Android developer:
+* [kolesa.kz](httsp://kolesa.kz) - Kazakhstan's larges auto classified service
+* [krisha.kz](https://krisha.kz) - Everything about real estates in Kazakhstan with analytics
+* [market.kz](httsp://market.kz) - Classified for searching goods and services all over Kazakhstan
+
+
+Also worked at [iBecSystems](http://ibecsystems.com) from 2015 to 2016:
+* [post.kz](https://play.google.com/store/apps/details?id=kz.post) - post service of Kazakhstan, worked on first version
+* [chocolife.me](https://play.google.com/store/apps/details?id=chocolife.me) - largest coupon service in Kazakhstan, this work was first version too
+* Supported Android applications for TV channel companies like [khabar.kz](khabar.kz) and [24.kz](24.kz)
