@@ -1,12 +1,15 @@
 title: Blog of Janibek
 email: janibek.marshal@gmail.com
-description: >- # this means to ignore newlines until "baseurl:"
+description: >-
   Android developer from land of steppe.
   Working at kolesa as Android team lead.
-baseurl: "" # the subpath of your site, e.g. /blog
-url: "http://janibek.marshal.com" # the base hostname & protocol for your site, e.g. http://example.com
+# Url configuration
+baseurl: ""
+url: "http://janibek.marshal.com"
+# Social networks
 twitter_username: megasuperhero
 github_username:  JohnMars
+instagram_username: john_marhsal
 
 # Build settings
 markdown: kramdown
