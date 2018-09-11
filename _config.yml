@@ -10,6 +10,9 @@ url: "http://janibek.marshal.com"
 twitter_username: megasuperhero
 github_username:  JohnMars
 instagram_username: john_marhsal
+# Commenting
+disqus:
+  shortname: janibek-marshal
 
 # Build settings
 markdown: kramdown
