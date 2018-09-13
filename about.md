@@ -14,7 +14,7 @@ Right now I'm working on classified projects as lead Android developer:
 * [market.kz](httsp://market.kz) - Classified for searching goods and services all over Kazakhstan
 
 
-Also worked at [iBecSystems](http://ibecsystems.com) from 2015 to 2016:
+Also worked at [iBecSystems](http://ibecsystems.com) from 2014 to 2015:
 * [post.kz](https://play.google.com/store/apps/details?id=kz.post) - post service of Kazakhstan, worked on first version
 * [chocolife.me](https://play.google.com/store/apps/details?id=chocolife.me) - largest coupon service in Kazakhstan, this work was first version too
 * Supported Android applications for TV channel companies like [khabar.kz](khabar.kz) and [24.kz](24.kz)
