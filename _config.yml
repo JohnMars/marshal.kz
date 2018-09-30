@@ -21,3 +21,10 @@ plugins:
   - jekyll-feed
 
 google_analytics: UA-110082079-2
+
+collections:
+  - portfolios
+
+sass:
+  sass_dir: _scss
+  style: :compressed
