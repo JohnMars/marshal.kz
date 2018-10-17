@@ -1,0 +1,14 @@
+---
+layout: default
+---
+{% for portfolio in site.portfolios %}
+  <div class="portfolio">
+    <span class="portfolio_logo_container">
+      <img src="{{ portfolio.logo }}" alt="{{ portfolio.logo_alt}}" class="portfolio_logo"/>
+    </span>
+    <div class="portfolio_description">
+      <h2>  {{ portfolio.name }} - {{ portfolio.info }}</h2>
+      <p>{{ portfolio.content | markdownify }}</p>
+    </div>
+  </div>
+{% endfor %}
