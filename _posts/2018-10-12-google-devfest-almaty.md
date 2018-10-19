@@ -1,11 +1,11 @@
 ---
 layout: post
-title: "Code Labs: Разработка простого приложения, используя Architecture Components"
+title: "Code Labs: Разработка простого приложения, используя Android Architecture Components"
 date: 2018-10-12 10:00:00 +0600
 categories: codelabs
 ---
 
-> DevFest, 21 Окт. 2018
+> DevFest, 20 Окт. 2018
 > Маршал Жанибек. Ведущий разработчик команды Android
 > компании Колёса | Крыша | Маркет
 
@@ -166,7 +166,7 @@ advertListViewModel = ViewModelProviders
 
 [LiveData](https://developer.android.com/topic/libraries/architecture/livedata) - это класс держателя данных, который умеет следить за жизненным циклом. Он сохраняет значение и позволяет наблюдать за этим значением. Под капотом класса LiveData реализован [Observable pattern](https://refactoring.guru/ru/design-patterns/observer).
 
-![Observer pattern](/assets/codelabs/Observer.png)
+![Observer pattern](/assets/codelabs/observer.png)
 > Картинка взята с сайта [Refactoring.guru](https://refactoring.guru/ru/design-patterns/observer)
 
 Если брать Observable pattern, LiveData это наш *Subject*, а *наблюдатели* это объекты которые наследуются от [Observer](https://developer.android.com/reference/android/arch/lifecycle/Observer.html). Чтобы подписаться на LiveData требуется предоставить `LifecycleOwner` - LiveData следит за его жизненным циклом и сам отпишет подписчиков при его уничтожение. Вы можете подписываться на LiveData, не предоставляя LifeCycleOwner, но в таком случае вам нужно отписываться от него вручную в нужный момент.
@@ -284,7 +284,7 @@ dependencies {
 
 | id | title | price | specification | text | date | parameters     | photos  | phones  |
 |----|-------|-------|---------------|------|------|----------------|---------|---------|
-| 1  | BMW   | 10000 | foo           | foo  | 1234 | Руль:слева,... | url,... | 1234,...|  
+| 1  | Toyota Camry 2018 года | 10000 | foo | foo  | 1234 | Руль:слева,... | https://photos-b-kl.kcdn.kz/68/689db250-d36d-4bf5-9897-1daf97939a1f/1-full.jpg,... | +77071234567,...|  
 
 Вы ранее работали с реляционными базами данных, такие как SQL, вы должны понимать схему этой таблицы.
 Такая таблица виде POJO выглядело бы вот так:
@@ -455,3 +455,213 @@ override fun onCreate() {
 ```
 
 Таким образом вы завершили внедрение библиотеки Room в проект. Теперь ваши запросы в SQLite будут надежными, так как во время компиляции Room проверяет валидность ваших SQL запросов.
+
+## 6. Шаблон проектирования Repository
+
+Repository отвечают за обработку данных.
+* Они предоставляют чистый API для остальной части приложения для данных приложения.
+* Где взять данные и какие вызовы API делать при обновлении данных.
+* Они являются посредниками между различными источниками данных (Room и API)
+
+Основная вашего Repository будет записи загруженных объявлении с **RemoteDataSource** и получить записанное объявление для просмотра детали в **AdvertDetailsActivity**.
+![Repository flow](/assets/codelabs/repository.png)
+
+В вашем случае класс Repository будет управлять обменом данными между вашим недавно созданным **AdvertisementDao**, который дает вам доступ ко всему в базе данных и к **RemoteDataSource**.
+
+Нкито, кроме класса Repository, не будет напрямую связываться с базой данных или сетевыми пакетами, а пакеты данных и сети не будут связываться с классами за пределами их ответствуенности. Таким образом, в Repository будет API для получения данных для отображения на экранах *AdvertListActivity* и *AdvertDetailsActivity*.
+
+Обращение к Repository будете реализовать подобным схемой:
+* Ходим в RemoteDataSource за всеми объявлениями
+![Repository RemoteDataSource](/assets/codelabs/Repository-flow-1.png)
+* Записываем полученные объявлении в KolesaDatabase
+![Repository KolesaDatabase](/assets/codelabs/Repository-flow-2.png)
+* Ответ от RemoteDataSource оборвется, мы вы обратимся за объявлиями в KolesaDatabase
+![Repository KolesaDatabase](/assets/codelabs/Repository-flow-no-connection.png)
+
+### TASK: Реализация
+
+В следующем шаге вам необходимо записать полученные объявлении от *RemoteDataSource* в *KolesaDatabase*. Так же вам необходимо передать *AdvertisementToRoomMapper*. Mapper это специальный класс для преобразования моделей между слоями, например, от модели БД к модели домена. Обычно они называются XxxMapper и имеют один метод с Map имен (или преобразованием / преобразованием). В ващем случае конвертирует *Advertisement* в *RoomAdvertisement*.
+
+1. Откройте `kz.kolesa.devfest.data.DefaultAdvertisementRepository` и добавьте *KolesaDatabase*, *AdvertisementToRoomMapper* и *RoomToAdvertisementMapper* в конструктор.
+```kotlin
+class DefaultAdvertisementRepository(
+        ...
+        private val kolesaDatabase: KolesaDatabase = KolesaDatabase.get(),
+        private val advertToRoomMapper: AdvertisementToRoomMapper = AdvertisementToRoomMapper(),
+        private val roomToAdvertisementMapper: RoomToAdvertisementMapper = RoomToAdvertisementMapper()
+): AdvertisementRepository
+```
+2. Запишите объект *Advertisement* полученное от *RemoteDataSource*.
+```kotlin
+  override fun searchAdvertisement(): List<Advertisement> {
+      ...
+      val advertisementDao = kolesaDatabase.advertisementDao()
+      val advertisementList = response.body()?.map {
+          val advertisement = apiAdvertisementMapper.map(it)
+          val roomAdvertisement = advertToRoomMapper.map(advertisement)
+          advertisementDao.insertAll(roomAdvertisement)
+
+          advertisement
+      } ?: emptyList()
+
+      return advertisementList
+  }
+```
+3. Если же *RemoteDataSource* не смог вытащить список объявлении по каким-то причинами, вы можете попробовать вытащить все объявлении которые записаны в *KolesaDatabase*. Для этого мы переделаем `emptyList()` на обращением за данным по методу *AdvertisementDao*.
+```kotlin
+override fun searchAdvertisement(): List<Advertisement> {
+  ...
+    ?: getLocalAdvertisements()
+  ...
+}    
+private fun getLocalAdvertisements(): List<Advertisement> {
+    return kolesaDatabase.advertisementDao().getAll().map {
+        roomToAdvertisementMapper.map(it)
+    }
+}
+```
+4. Вытащите *Advertisement* из *KolesaDatabase* при вызове метода `getAdvertisement(id: Long): Advertisement?`
+```kotlin
+override fun getAdvertisement(id: Long): Advertisement? {
+    val advertisementDao = kolesaDatabase.advertisementDao()
+    val localAdvertisement = advertisementDao.find(id).firstOrNull()
+
+    return roomToAdvertisementMapper.map(localAdvertisement)
+}
+```
+5. Если же в *KolesaDatabase* отсутствует *RoomAdvertisement*, то вам необходимо обратиться за ним из *RemoteDataSource*.
+```kotlin
+return if (localAdvertisement == null) {
+    requestAdvertisement(id)?.apply {
+        advertisementDao.insertAll(advertToRoomMapper.map(this))
+    }
+} else {
+    roomToAdvertisementMapper.map(localAdvertisement)
+}
+```
+6. Осталось вам добавить класс *AdvertisementRepository* в *AdvertListViewModel*. Объект *AdvertisementRepository* уже объявлен в *DefaultAdvertisementRepository* виде переменной **val DEFAULT_ADVERTISEMENT_REPOSITOR**. В *AdvertListViewModel* удалите **advertisementService** так как единственным источником истинных данных должен быть получен от Repository.
+```kotlin
+class AdvertListViewModel(
+        private val advertisementRepository: AdvertisementRepository = DEFAULT_ADVERTISEMENT_REPOSITORY
+) : ViewModel() {
+
+  private fun requestAdvertisements() {
+    launch(UI) {
+        val advertisements = withContext(DefaultDispatcher) {
+            advertisementRepository.searchAdvertisement()
+        }
+        advertListLiveData.value = advertisements
+    }
+  }
+}
+```
+
+## 7. AdvertDetailsViewModel
+
+Вы реализовали Repository в слое data layer. Теперь вам нужно показить детали объявления, которое будет отображаться в **AdvertDetailsActivity**. У этого *Activity* будет свой ViewModel **AdvertDetailsViewModel**. Реализацию ViewModel вы ознакомились при создание **AdvertListViewModel**, поэтому вам не должно состовить труда понять его реализацию.
+
+### TASK: Реализация AdvertDetailsViewModel
+
+1. Откройте `kz.kolesa.devfest.advertdetails.AdvertDetailsViewModel` и создайте *LiveData* чтобы предоставить **Advertisement**.
+```kotlin
+class AdvertDetailsViewModel(
+    ...
+) : ViewModel() {
+    val advertisementLiveData = MutableLiveData<Advertisement>()
+}
+```
+2. Вытащите *Advertisement* из *AdvertisementRepository* и запишите его в **advertisementLiveData**.
+```kotlin
+    val advertisementLiveData = MutableLiveData<Advertisement>().apply {
+        if (value == null) {
+            requestAdvertisement(advertisementId)
+        }
+    }
+
+    private fun requestAdvertisement(advertisementId: Long) {
+        launch(UI) {
+            val advertisement = withContext(DefaultDispatcher) {
+                advertisementRepository.getAdvertisement(advertisementId)
+            }
+            advertisementLiveData.value = advertisement
+        }
+    }
+```
+3. Последним шагом будет отображение *Advertisement*, получаемое от **advertisementLiveData** в файле `kz.kolesa.devfest.advertdetails.AdvertDetailsActivity`.
+```kotlin
+    private fun observeLiveData() {
+        ...
+        advertDetailsViewModel.advertisementLiveData.observe(this, Observer { advertisement ->
+            advertisement?.let { onAdvertisementUpdated(it) }
+        })
+    }
+```
+
+## 8. ViewModelProvider.Factory
+
+Когда вам нужно передавать объекты во ViewModel при созданием, вам необходимо указать класс с interface [ViewModelProvider.Factory](https://developer.android.com/reference/android/arch/lifecycle/ViewModelProvider.Factory). ViewModelProviders, который указываете в Activity, вытаскивает объект ViewModel из своего кэша либо инициализирует через рефлексию для создания ViewModel. Поэтому получается что при инициализации этот *ViewModelProviders* не знает как передать объект в конструктор ViewModel.
+
+### TASK: Создание AdvertDetailsViewModelFactory
+
+При нажатие на элемент в списке объявлении передается идентификатор выбранного объявления в *AdvertDetailsActivity*. При создание *AdvertDetailsViewModel* в этом Activity вы укажите **AdvertDetailsViewModelFactory**.
+
+1. Откройте файл `kz.kolesa.devfest.advertdetails.AdvertDetailsViewModelFactory` и передайте идентифатор объявления в конструктор класса.
+```kotlin
+class AdvertDetailsViewModelFactory(
+        private val advertisementId: Long
+) : ViewModelProvider.Factory
+```
+2. Напишите реализацию interface **ViewModelProvider.Factory**.
+```kotlin
+override fun <T : ViewModel?> create(modelClass: Class<T>): T {
+    @Suppress("UNCHECKED_CAST")
+    if (modelClass.isAssignableFrom(AdvertDetailsViewModel::class.java)) {
+        return AdvertDetailsViewModel(advertisementId) as T
+    }
+
+    throw IllegalArgumentException("Could not instantiate " +
+            AdvertDetailsViewModel::class.java.simpleName)
+}
+```
+3. Укажите **AdvertDetailsViewModelFactory** в качестве *Factory* при создание *ViewModel* в файле `kz.kolesa.devfest.advertdetails.AdvertDetailsActivity`.
+```kotlin
+    private fun initViewModel() {
+      val advertisementId = getAdvertisementId()
+      val viewModelFactory = AdvertDetailsViewModelFactory(advertisementId)
+      advertDetailsViewModel = ViewModelProviders
+              .of(this, viewModelFactory)
+              .get(AdvertDetailsViewModel::class.java)
+    }
+```
+
+## 9. Итог разработки приложения с помощью Android Architecture Components
+
+#### Поздравляю! Вы дошли до конца и реализовали приложение базовой версии Kolesa.
+
+В этом code labs узнали о компонентах Android Architecture: Lifecycle Owner, ViewModel, LiveData, Room. Так же вы рассмотрели подходы реализации чистой архитектуры. В чистой архитектуре очень важно абстрагировать реализации каждого класса чтобы они отвечали конкретно за одну логику.
+
+* UI контроллеры - Activity или Fragment должен отвечать только за отображение данных, полученных от ViewModel.
+* ViewModel - выполняет роль за хранением данных UI контроллера и обращение к слою data.
+* LiveData - уведомляет подписчиков при получение новых данных.
+* Repository - является связующем звеном для ViewModel, решает откуда достать данные.
+* Room - реализует локальное хралище данных в SQLite.
+* RemoteDataSource - отвечает за загрузку даных из API сервера.
+
+### Что дальше
+
+В приложении отображение данных реализован и навигация по экрану реализован по простому способу - передаем полученые данные от LiveData в **RecyclerView.Adapter**, а навигация происходит по Intent. Эти вещи вы бы переписать с помощию дополнительных компонентов Android Architecture Components:
+
+* [DataBinding](https://developer.android.com/topic/libraries/data-binding/) - это библиотека, которая позволяет связывать компоненты UI в ваших XML с источниками данных в вашем приложении, используя *декларативный формат*, а не программно.
+* [Navigation](https://developer.android.com/topic/libraries/architecture/navigation/) - упрощает реализацию навигации в приложении для Android. В данном библиотеке вам нужно будет заменить UI контроллер с Activity на Fragment.
+* [Paging](https://developer.android.com/topic/libraries/architecture/paging/) - упрощает загрузку данных в RecyclerView, например для реализации бесконечной загрузки при листание списка.
+* [WorkManager](https://developer.android.com/topic/libraries/architecture/workmanager/) - упрощает определение отложенных, асинхронных задач и их запуск. Эти API позволяют вам запускать синхронизации данных периодически и на фоне.
+
+На этом code labs по теме Android Architecture Components завершен. Вы можете посмотреть весь этап разработки по коммитам [в данном Git Repository](https://github.com/JohnMars/google-devfest-almaty-2018/commits/master).
+
+## 10. Использованные материалы
+
+1. [Google Code Labs: Build an App with Architecture Components](https://codelabs.developers.google.com/codelabs/build-app-with-arch-components/index.html)
+2. [Android Developers: Guide to app architecture](https://developer.android.com/jetpack/docs/guide)
+3. [Florina Muntenescu: 7 Pro tips for Room](https://medium.com/androiddevelopers/7-pro-tips-for-room-fbadea4bfbd1)
+
+> Acknowledgement: this code labs was mostly based on code labs by the Google https://codelabs.developers.google.com/codelabs/build-app-with-arch-components
