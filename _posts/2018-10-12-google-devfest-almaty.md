@@ -531,13 +531,13 @@ override fun getAdvertisement(id: Long): Advertisement? {
 ```
 5. Если же в *KolesaDatabase* отсутствует *RoomAdvertisement*, то вам необходимо обратиться за ним из *RemoteDataSource*.
 ```kotlin
-return if (localAdvertisement == null) {
-    requestAdvertisement(id)?.apply {
-        advertisementDao.insertAll(advertToRoomMapper.map(this))
+    return if (localAdvertisement == null) {
+        requestAdvertisement(id)?.apply {
+            advertisementDao.insertAll(advertToRoomMapper.map(this))
+        }
+    } else {
+        roomToAdvertisementMapper.map(localAdvertisement)
     }
-} else {
-    roomToAdvertisementMapper.map(localAdvertisement)
-}
 ```
 6. Осталось вам добавить класс *AdvertisementRepository* в *AdvertListViewModel*. Объект *AdvertisementRepository* уже объявлен в *DefaultAdvertisementRepository* виде переменной **val DEFAULT_ADVERTISEMENT_REPOSITOR**. В *AdvertListViewModel* удалите **advertisementService** так как единственным источником истинных данных должен быть получен от Repository.
 ```kotlin
@@ -545,14 +545,14 @@ class AdvertListViewModel(
         private val advertisementRepository: AdvertisementRepository = DEFAULT_ADVERTISEMENT_REPOSITORY
 ) : ViewModel() {
 
-  private fun requestAdvertisements() {
-    launch(UI) {
-        val advertisements = withContext(DefaultDispatcher) {
-            advertisementRepository.searchAdvertisement()
+    private fun requestAdvertisements() {
+        launch(UI) {
+            val advertisements = withContext(DefaultDispatcher) {
+                advertisementRepository.searchAdvertisement()
+            }
+            advertListLiveData.value = advertisements
         }
-        advertListLiveData.value = advertisements
     }
-  }
 }
 ```
 
