@@ -131,14 +131,13 @@ ViewModel привязываются к одному UI контроллеру, 
 Как мы видим, ViewModel существует до тех пор, пока Activity полностью не уничтожиться.
 Для детального изучения ViewModel, вы можете ознакомиться [с данным статьей](https://medium.com/androiddevelopers/viewmodels-a-simple-example-ed5ac416317e).
 
-### Создание ViewModels
+### TASK: Создание ViewModels
 
 Далее вы будете создавать ViewModel в проекте. Сначала мы попробуем добавить ViewModel для экрана AdvertListActivity.
 
 1. Добавьте данные dependencies в файле `app/build.gradle`.
 ```gradle
 dependencies {
-  implementation "androidx.room:room-runtime:$lifecycle_version"
   implementation "androidx.lifecycle:lifecycle-extensions:$lifecycle_version"
   kapt "androidx.lifecycle:lifecycle-compiler:$lifecycle_version"
 }
@@ -172,7 +171,7 @@ advertListViewModel = ViewModelProviders
 
 Если брать Observable pattern, LiveData это наш *Subject*, а *наблюдатели* это объекты которые наследуются от [Observer](https://developer.android.com/reference/android/arch/lifecycle/Observer.html). Чтобы подписаться на LiveData требуется предоставить `LifecycleOwner` - LiveData следит за его жизненным циклом и сам отпишет подписчиков при его уничтожение. Вы можете подписываться на LiveData, не предоставляя LifeCycleOwner, но в таком случае вам нужно отписываться от него вручную в нужный момент.
 
-### Создание LiveData
+### TASK: Создание LiveData
 
 *AdvertDetailsActivity* будет следить за LiveData который будет содержаться в AdvertListViewModel. Обычный LiveData не имеет возможность устанавливать новое значение. Вам понадобиться использовать [MutableLiveData](https://developer.android.com/reference/android/arch/lifecycle/MutableLiveData) чтобы могли уведомлять новыми значениями при получения данных от источника данных.
 
@@ -202,7 +201,7 @@ advertisements?.let { updateView(it) }
 
 > Важно отметить что у `MutableLiveData` содержаться 2 метода для указания значении в LiveData: [setValue()](https://developer.android.com/reference/android/arch/lifecycle/MutableLiveData.html#setValue(T)) и [postValue()](https://developer.android.com/reference/android/arch/lifecycle/MutableLiveData.html#postValue(T)). Разница в том, что *setValue* можно вызывать только в главном потоке(*UI thread*). А для *postValuу()* можно вызывать вне зависимости от контекста текущего потока.
 
-### Обновление данных LiveData в действии
+### TASK: Обновление данных LiveData в действии
 
 Далее вы узнаете как сходить за данными в фоновом потоке и обновить LiveData на главном потоке. Для асинхронной задачи в проекте предоставлена библиотека [Kotlin Coroutines](https://github.com/Kotlin/kotlinx.coroutines). Вдаваться в эту библиотеку вы не будете, но если вам интересно, можете поизучить [по подробнее](https://kotlinlang.org/docs/reference/coroutines-overview.html).
 
@@ -243,3 +242,216 @@ advertListLiveData.postValue(advertisements)
 ```
 
 Таким образом LiveData будет уведомлять всех подписчиков(*AdvertListActivity*), когда успешно вернется результат запроса во внешний источник данных. Даже при изменении конфигурации, объект ViewModel останется прежними и продолжит ожидать ответ по запросу. Попробуйте запустить приложение и проверить это на деле.
+
+## 5. Room: Локальное хранилище
+
+Работа с классом SQLiteOpenHelper всегда состовляет мучение: создание таблицы, миграция, SQL запросы, чтение данных по Cursor и т.д. Поэтому Google предложил удобную библиотеку для хранения объектов в SQLite - **Room**
+
+* Меньше кода шаблона по сравнению со встроенными API.
+  * Не нужно использовать ContentValues или Cursors
+  * Используются аннотации для связки таблиц
+* Проверка выполнения SQL происходит во время компиляции
+  * Неверные запросы SQL будут выявлены не во время выполнения приложения
+* Наблюдение за данными можно реализовать с помощью LiveData
+
+### Room: Аннотация
+
+Room использует аннотацию `@` для определения структуры базы данных. Основные аннотации приведены ниже:
+
+* **@Entity** - этот компонент определяет схему таблицы базы данных.
+* **@DAO** - этот компонент представляет класс или интерфейс как объект доступа к данным (DAO)
+* **@Database** - свойство базы данных. В этом классе вы определяете список объектов для базы данных и объектов доступа к данным (DAO) для базы данных.
+
+### TASK: Добавляем Room в проект
+
+Для добавления Room в проект, выполните следующие шаги
+
+1. Откройте `app/build.gradle` и добавьте следующие dependencies.
+```gradle
+dependencies {
+  ...
+  implementation "androidx.room:room-runtime:$room_version"
+  kapt "androidx.room:room-compiler:$room_version"
+}
+```
+2. Нажмите кнопку для синхронизации gradle.
+
+Данные dependencies предоставляет библиотеку Room от Architecture Components. Благодаря annotation processing (*kapt*), отмеченное как room-compiler, во время компиляции приложения у вас будут проверяться валидность компонентов Room.
+
+### TASK: Создание сущности
+
+При работе с базами данных будет удобно, если вы предвадительно оформите таблицы, которые будете создавать в вашем приложении. В случае с копием приложения Колёса у нас будут такая таблица:
+
+| id | title | price | specification | text | date | parameters     | photos  | phones  |
+|----|-------|-------|---------------|------|------|----------------|---------|---------|
+| 1  | BMW   | 10000 | foo           | foo  | 1234 | Руль:слева,... | url,... | 1234,...|  
+
+Вы ранее работали с реляционными базами данных, такие как SQL, вы должны понимать схему этой таблицы.
+Такая таблица виде POJO выглядело бы вот так:
+
+```kotlin
+package kz.kolesa.devfest.data.room
+...
+
+data class RoomAdvertisement(
+        val id: Long,
+        val title: String,
+        val price: Long,
+        val specification: String,
+        val text: String,
+        val date: Date,
+        val parameters: List<RoomParameter>,
+        val photos: List<RoomPhoto>,
+        val phones: List<RoomPhone>
+) {
+
+    data class RoomPhoto(
+            val url: String
+    )
+
+    data class RoomParameter(
+            val label: String,
+            val value: String
+    )
+
+    data class RoomPhone(
+            val number: String
+    )
+}
+```
+
+Теперь попробуйте добавить аннотацию Entity для POJO класса RoomAdvertisement
+
+1. Добавьте аннотацию **@Entity** с название таблицы **advertisements**.
+```kotlin
+@Entity(tableName = "advertisements")
+data class RoomAdvertisement(
+  ...
+)
+```
+2. Укажите **primary key** в аргументе аннотации **@Entity**. В вашем случае это будет **id**.
+```kotlin
+@Entity(
+  tableName = "advertisements",
+  primaryKeys = ["id"]
+)
+```
+
+Благодаря языку программирования Kotlin, процесс работы с создание POJO объектов упростилось гораздо проще. Все эти `data class` при копиляции создаст вам getter методы для каждой переменной в данном классе. Если захотите чтобы POJO объект был не только для чтения, а read/write, то вы можете попробовать поменять val на var.
+
+Дополнительные компоненты для *Entity* вы можете найти [в данном документации](https://developer.android.com/training/data-storage/room/defining-data).
+
+### Путь Дао - создаем Database Access Object
+
+Далее вам нужно создать компонент [**@Dao**](https://developer.android.com/reference/android/arch/persistence/room/Dao.html). Dao буквально переводиться как 'Объект Доступа к Данным'. Аннотацию Dao чаще всего указываем для interface, но так же можно объявить для abstract class. В функциях которые будете создавать для реализации доступа к БД, вы можете добавлять все стандартные операции CRUD: `@Query`, `@Insert`, `@Update` и `@Delete`. Подробную документацию можете посмотреть [тут](https://developer.android.com/training/data-storage/room/accessing-data).
+
+### TASK: Создать Dao
+
+1. Создайте **interface** с названием **RoomAdvertisementDao** в папке **kz.kolesa.devfest.data.room**
+2. Добавьте аннотациюю **@Dao** для **RoomAdvertisementDao**
+3. Создайте метод **insertAll**, который принимает несколько количество **Advertisement**.
+4. Добавьте аннотацию **insert** для метода **insertAll**.
+5. Добавьте в аннотацию **insert** аргумент **onConflict** со значением **OnConflictStrategy.REPLACE**
+6. Добавьте метод **getAllAdvertisements** с аннотацием **Query**. SQL запрос будет выглядет так `SELECT * FROM advertisements`
+
+В итоге должен получится такой класс
+```kotlin
+package kz.kolesa.devfest.data.room
+...
+
+@Dao
+interface RoomAdvertisementDao {
+
+    @Query("SELECT * FROM advertisements")
+    fun getAll(): List<RoomAdvertisement>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    fun insertAll(vararg advertisement: RoomAdvertisement)
+}
+```
+
+### TASK: Создать базу данных
+
+Создание базы данных так же делается с помощью аннотации. Указав анотацию **@DataBase** к классу, наследующие **RoomDatabase**, у вас будет готово экземпляр объекта для чтения и записи SQLite базы.
+
+Наличие нескольких экземпляров базы данных вызывает проблемы, если, например, вы пытаетесь прочитать базу данных одним экземпляром во время записи в другой экземпляр. Чтобы убедиться, что вы создаете только один экземпляр RoomDatabase, ваш класс базы данных должен быть Singleton.
+
+1. В файле **kz.kolesa.devfest.data.room.KolesaDatabase** создайте **абстрактный класс**
+2. Сделайте класс **KolesaDatabase** наследником от [RoomDatabase](https://developer.android.com/reference/android/arch/persistence/room/RoomDatabase)
+3. Добавьте аннотацию `@Database` к классу
+4. Укажите значение **version** и **entitiy** для аннотации `@Database`.
+  * Так как мы только создаем БД, мы укажем версию 1
+  * В значениях **entity** необходимо указать список классов, которые отметили с аннотацием `@Entity`
+5. Добавить абстрактный метод `abstract fun advertisementDao(): AdvertisementDao` в классе
+```kotlin
+@Database(
+        entities = [RoomAdvertisement::class],
+        version = 1
+)
+@TypeConverters(DateConverter::class, AdvertisementConverter::class)
+abstract class KolesaDatabase : RoomDatabase() {
+  ...
+}
+```
+6. Сделайте KolesaDatabase как Singleton.
+```kotlin
+companion object {
+
+        private const val KOLESA_DATABASE_NAME = "kolesa"
+        private lateinit var instance: KolesaDatabase
+
+        fun get(): KolesaDatabase = instance
+
+        fun initialize(context: Context) {
+            instance = create(context)
+        }
+
+        private fun create(context: Context): KolesaDatabase {
+            TODO()
+        }
+}
+7. Создайте KolesaDatabase через `Room.databaseBuilder`.
+```kotlin
+private fun create(context: Context): KolesaDatabase {
+        return Room.databaseBuilder(
+                context.applicationContext,
+                KolesaDatabase::class.java,
+                KOLESA_DATABASE_NAME
+        ).build()
+}
+```
+7. Инициализируйте KolesaDatabase в классе `kz.kolesa.devfest.KolesaApplication`.
+```kotlin
+override fun onCreate() {
+        super.onCreate()
+        KolesaDatabase.initialize(this)
+}
+```
+
+Теперь у вас есть БД с таблицой указанной в *entities*.
+
+### Converter
+
+В классе `RoomAdvertisement` есть такие объекты как `Date`, `List<RoomParameter>`, `List<RoomPhoto>`, `List<RoomPhone>`. Но вы не сможете записать их в БД так как у SQLite [нет указанные типы данных](https://sqlite.org/datatype3.html). Для этого вам необходимо серелисериализовать и десериализовать при обращение к SQL - у Room есть компонент [**@TypeConverter**](https://developer.android.com/reference/android/arch/persistence/room/TypeConverter).
+
+Для преобразования между типами Java/Kotlin и типами данных, поддерживаемыми SQLite, вам необходимо определить методы преобразования и указать Room о них через аннотацию `@TypeConverter`. Для этого понадобится:
+* Создать класс который содержит методы для конвертации из одного типа в другой тип
+* Указать этим методом аннотацию `@TypeConverter`
+* Добавить аннотацию `@TypeConverters` в классе, где реализован ваш БД с аннотацией `@Database`
+
+### TASK: Добавить компоненты TypeConverter
+
+У вас есть несколько типов, которые не поддерживаются - Date и список(*List*) с объектами. Один из вариантов записи этих данных в SQLite это:
+* Date в Long и Long в Date когда вытаскиваем данные
+* Объекты в List запишем виде String(Text) через разделитель *,*
+* Так как у Parameter существует переменные *label* и *value*, запишем их в формате `{label}:{value}` при конвертации в String
+
+Вы определись как будете записывать и считывать данные в БД, теперь попробуйте выполнить следующие шаги:
+1. Откройте файл `kz.kolesa.devfest.data.room.RoomConverter` и откомментируйте методы, которые отмечены с аннотацием `@TypeConverter`.
+2. Откройте файл `kz.kolesa.devfest.data.room.KolesaDatabase` и добавьте аннотацию `@TypeConverters`.
+3. В аннотации `@TypeConverters` укажите объекты указаны в файле **RoomConverter**
+```kotlin
+@TypeConverters(DateConverter::class, AdvertisementConverter::class)
+```
+
+Таким образом вы завершили внедрение библиотеки Room в проект. Теперь ваши запросы в SQLite будут надежными, так как во время компиляции Room проверяет валидность ваших SQL запросов.
