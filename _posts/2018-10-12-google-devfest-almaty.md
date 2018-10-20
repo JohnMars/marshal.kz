@@ -47,7 +47,7 @@ categories: codelabs
 
 ### Скачиваем исходный код
 
-1. `git clone https://stash.kolesa-team.org/projects/MAPG/repos/android-devfest-aar/browse`
+1. `git clone https://github.com/JohnMars/google-devfest-almaty-2018.git`
 2. Открыть в Android Studio
 
 Всю историю commit можно увидеть в master ветке
@@ -208,7 +208,8 @@ advertisements?.let { updateView(it) }
 1. Добавляем сервис для загрузки данных из внешнего источника. Объект **ADVERTISEMENT_SERVICE** уже доступен в проекте по singleton.
 ```kotlin
 class AdvertListViewModel(
-        private val advertisementService: AdvertisementService = ADVERTISEMENT_SERVICE
+        private val advertisementService: AdvertisementService = ADVERTISEMENT_SERVICE,
+        private val apiAdvertisementMapper: ApiAdvertisementMapper = ApiAdvertisementMapper()
 )
 ```
 2. Данные нужно загружать только в том случае, если у *advertListLiveData* значение пустое.
@@ -227,7 +228,8 @@ requestAdvertisements()
 private fun requestAdvertisements() {
         launch(UI) {
             val advertisements = withContext(DefaultDispatcher) {
-                advertisementRepository.searchAdvertisement()
+                val searchResponse = advertisementService.searchAdvertisements().execute()
+                searchResponse.body()?.map { apiAdvertisementMapper.map(it) }
             }
             // Уведомляем LiveData о новом значении
         }
@@ -384,18 +386,18 @@ interface RoomAdvertisementDao {
   * В значениях **entity** необходимо указать список классов, которые отметили с аннотацием `@Entity`
 5. Добавить абстрактный метод `abstract fun advertisementDao(): AdvertisementDao` в классе
 ```kotlin
-@Database(
-        entities = [RoomAdvertisement::class],
-        version = 1
-)
-@TypeConverters(DateConverter::class, AdvertisementConverter::class)
-abstract class KolesaDatabase : RoomDatabase() {
-  ...
-}
+  @Database(
+          entities = [RoomAdvertisement::class],
+          version = 1
+  )
+  abstract class KolesaDatabase : RoomDatabase() {
+
+        abstract fun advertisementDao(): RoomAdvertisementDao
+  }
 ```
 6. Сделайте KolesaDatabase как Singleton.
 ```kotlin
-companion object {
+    companion object {
 
         private const val KOLESA_DATABASE_NAME = "kolesa"
         private lateinit var instance: KolesaDatabase
@@ -409,7 +411,8 @@ companion object {
         private fun create(context: Context): KolesaDatabase {
             TODO()
         }
-}
+    }
+```
 7. Создайте KolesaDatabase через `Room.databaseBuilder`.
 ```kotlin
 private fun create(context: Context): KolesaDatabase {
@@ -447,7 +450,7 @@ override fun onCreate() {
 * Так как у Parameter существует переменные *label* и *value*, запишем их в формате `{label}:{value}` при конвертации в String
 
 Вы определись как будете записывать и считывать данные в БД, теперь попробуйте выполнить следующие шаги:
-1. Откройте файл `kz.kolesa.devfest.data.room.RoomConverter` и откомментируйте методы, которые отмечены с аннотацием `@TypeConverter`.
+1. Откройте файл `kz.kolesa.devfest.data.room.RoomConverter` и добавьте аннотацию `@TypeConverter` для каждого метода.
 2. Откройте файл `kz.kolesa.devfest.data.room.KolesaDatabase` и добавьте аннотацию `@TypeConverters`.
 3. В аннотации `@TypeConverters` укажите объекты указаны в файле **RoomConverter**
 ```kotlin
@@ -520,7 +523,9 @@ private fun getLocalAdvertisements(): List<Advertisement> {
     }
 }
 ```
-4. Вытащите *Advertisement* из *KolesaDatabase* при вызове метода `getAdvertisement(id: Long): Advertisement?`
+4. Откройте `kz.kolesa.devfest.data.room.AdvertisementDao` и добавьте метод для поиска одного объекта *Advertisement*
+
+5. Возвращаемся в Repository. Вытащите *Advertisement* из *KolesaDatabase* при вызове метода `getAdvertisement(id: Long): Advertisement?`
 ```kotlin
 override fun getAdvertisement(id: Long): Advertisement? {
     val advertisementDao = kolesaDatabase.advertisementDao()
@@ -529,7 +534,7 @@ override fun getAdvertisement(id: Long): Advertisement? {
     return roomToAdvertisementMapper.map(localAdvertisement)
 }
 ```
-5. Если же в *KolesaDatabase* отсутствует *RoomAdvertisement*, то вам необходимо обратиться за ним из *RemoteDataSource*.
+6. Если же в *KolesaDatabase* отсутствует *RoomAdvertisement*, то вам необходимо обратиться за ним из *RemoteDataSource*.
 ```kotlin
     return if (localAdvertisement == null) {
         requestAdvertisement(id)?.apply {
@@ -539,7 +544,7 @@ override fun getAdvertisement(id: Long): Advertisement? {
         roomToAdvertisementMapper.map(localAdvertisement)
     }
 ```
-6. Осталось вам добавить класс *AdvertisementRepository* в *AdvertListViewModel*. Объект *AdvertisementRepository* уже объявлен в *DefaultAdvertisementRepository* виде переменной **val DEFAULT_ADVERTISEMENT_REPOSITOR**. В *AdvertListViewModel* удалите **advertisementService** так как единственным источником истинных данных должен быть получен от Repository.
+7. Осталось вам добавить класс *AdvertisementRepository* в *AdvertListViewModel*. Объект *AdvertisementRepository* уже объявлен в *DefaultAdvertisementRepository* виде переменной **val DEFAULT_ADVERTISEMENT_REPOSITOR**. В *AdvertListViewModel* удалите **advertisementService** так как единственным источником истинных данных должен быть получен от Repository.
 ```kotlin
 class AdvertListViewModel(
         private val advertisementRepository: AdvertisementRepository = DEFAULT_ADVERTISEMENT_REPOSITORY
@@ -547,10 +552,10 @@ class AdvertListViewModel(
 
     private fun requestAdvertisements() {
         launch(UI) {
-            val advertisements = withContext(DefaultDispatcher) {
-                advertisementRepository.searchAdvertisement()
+            val searchResponse = withContext(DefaultDispatcher) {
+                advertisementRepository.searchAdvertisements().execute()
             }
-            advertListLiveData.value = advertisements
+            advertListLiveData.value = searchResponse.body()
         }
     }
 }
