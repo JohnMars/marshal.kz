@@ -37,7 +37,7 @@ categories: codelabs
 
 Запросы в API и UI часть будет заранее доступно в проекте
 
-### Что вам понадобиться
+### Что вам понадобится
 
 1. Android Studio 3.0 или новее
 2. Знакомство со зданием Android-приложений и жизненным циклом активности Android
@@ -128,7 +128,7 @@ ViewModel привязываются к одному UI контроллеру, 
 
 ![ViewModel lifecycle](/assets/codelabs/viewmodel-lifecycle.png)
 
-Как мы видим, ViewModel существует до тех пор, пока Activity полностью не уничтожиться.
+Как мы видим, ViewModel существует до тех пор, пока Activity полностью не уничтожится.
 Для детального изучения ViewModel, вы можете ознакомиться [с данным статьей](https://medium.com/androiddevelopers/viewmodels-a-simple-example-ed5ac416317e).
 
 ### TASK: Создание ViewModels
@@ -173,7 +173,7 @@ advertListViewModel = ViewModelProviders
 
 ### TASK: Создание LiveData
 
-*AdvertDetailsActivity* будет следить за LiveData который будет содержаться в AdvertListViewModel. Обычный LiveData не имеет возможность устанавливать новое значение. Вам понадобиться использовать [MutableLiveData](https://developer.android.com/reference/android/arch/lifecycle/MutableLiveData) чтобы могли уведомлять новыми значениями при получения данных от источника данных.
+*AdvertDetailsActivity* будет следить за LiveData который будет содержаться в AdvertListViewModel. Обычный LiveData не имеет возможность устанавливать новое значение. Вам понадобится использовать [MutableLiveData](https://developer.android.com/reference/android/arch/lifecycle/MutableLiveData) чтобы могли уведомлять новыми значениями при получения данных от источника данных.
 
 Выполните следующие шаги чтобы создать LiveData и наблюдать за ним:
 
@@ -199,7 +199,7 @@ advertisements?.let { updateView(it) }
 
 Таким образом UI контроллер будет получать актуальные данные даже при изменении конфигурации и пересоздания Activity/Fragment. При вызове метода `MutableLiveData#setValue`, LiveData будет уведомлять всех подписчиков с данным значением. В вашем случае за списком объявлении следит *AdvertListActivity*, таким образом мы сможем отобразить данные в UI.
 
-> Важно отметить что у `MutableLiveData` содержаться 2 метода для указания значении в LiveData: [setValue()](https://developer.android.com/reference/android/arch/lifecycle/MutableLiveData.html#setValue(T)) и [postValue()](https://developer.android.com/reference/android/arch/lifecycle/MutableLiveData.html#postValue(T)). Разница в том, что *setValue* можно вызывать только в главном потоке(*UI thread*). А для *postValuу()* можно вызывать вне зависимости от контекста текущего потока.
+> Важно отметить что у `MutableLiveData` содержатся 2 метода для указания значении в LiveData: [setValue()](https://developer.android.com/reference/android/arch/lifecycle/MutableLiveData.html#setValue(T)) и [postValue()](https://developer.android.com/reference/android/arch/lifecycle/MutableLiveData.html#postValue(T)). Разница в том, что *setValue* можно вызывать только в главном потоке(*UI thread*). А для *postValue()* можно вызывать вне зависимости от контекста текущего потока.
 
 ### TASK: Обновление данных LiveData в действии
 
@@ -235,7 +235,7 @@ private fun requestAdvertisements() {
         }
 }
 ```
-4. Данные получим в главном потоке. Об этом позаботиться Coroutine, который реализован в методе requestAdvertisements(). Поэтому мы можем вызвать метод `setValue()`.
+4. Данные получим в главном потоке. Об этом позаботится Coroutine, который реализован в методе requestAdvertisements(). Поэтому мы можем вызвать метод `setValue()`.
 ```kotlin
 // Уведомляем LiveData о новом значении
 advertListLiveData.value = advertisements
@@ -345,7 +345,7 @@ data class RoomAdvertisement(
 
 ### Путь Дао - создаем Database Access Object
 
-Далее вам нужно создать компонент [**@Dao**](https://developer.android.com/reference/android/arch/persistence/room/Dao.html). Dao буквально переводиться как 'Объект Доступа к Данным'. Аннотацию Dao чаще всего указываем для interface, но так же можно объявить для abstract class. В функциях которые будете создавать для реализации доступа к БД, вы можете добавлять все стандартные операции CRUD: `@Query`, `@Insert`, `@Update` и `@Delete`. Подробную документацию можете посмотреть [тут](https://developer.android.com/training/data-storage/room/accessing-data).
+Далее вам нужно создать компонент [**@Dao**](https://developer.android.com/reference/android/arch/persistence/room/Dao.html). Dao буквально переводится как 'Объект Доступа к Данным'. Аннотацию Dao чаще всего указываем для interface, но так же можно объявить для abstract class. В функциях которые будете создавать для реализации доступа к БД, вы можете добавлять все стандартные операции CRUD: `@Query`, `@Insert`, `@Update` и `@Delete`. Подробную документацию можете посмотреть [тут](https://developer.android.com/training/data-storage/room/accessing-data).
 
 ### TASK: Создать Dao
 
@@ -473,7 +473,7 @@ Repository отвечают за обработку данных.
 
 Нкито, кроме класса Repository, не будет напрямую связываться с базой данных или сетевыми пакетами, а пакеты данных и сети не будут связываться с классами за пределами их ответствуенности. Таким образом, в Repository будет API для получения данных для отображения на экранах *AdvertListActivity* и *AdvertDetailsActivity*.
 
-Обращение к Repository будете реализовать подобным схемой:
+Обращение к Repository будете реализовать подобной схемой:
 * Ходим в RemoteDataSource за всеми объявлениями
 ![Repository RemoteDataSource](/assets/codelabs/Repository-flow-1.png)
 * Записываем полученные объявлении в KolesaDatabase
@@ -563,7 +563,7 @@ class AdvertListViewModel(
 
 ## 7. AdvertDetailsViewModel
 
-Вы реализовали Repository в слое data layer. Теперь вам нужно показить детали объявления, которое будет отображаться в **AdvertDetailsActivity**. У этого *Activity* будет свой ViewModel **AdvertDetailsViewModel**. Реализацию ViewModel вы ознакомились при создание **AdvertListViewModel**, поэтому вам не должно состовить труда понять его реализацию.
+Вы реализовали Repository в слое data layer. Теперь вам нужно показать детали объявления, которое будет отображаться в **AdvertDetailsActivity**. У этого *Activity* будет свой ViewModel **AdvertDetailsViewModel**. Реализацию ViewModel вы ознакомились при создание **AdvertListViewModel**, поэтому вам не должно составить труда понять его реализацию.
 
 ### TASK: Реализация AdvertDetailsViewModel
 
