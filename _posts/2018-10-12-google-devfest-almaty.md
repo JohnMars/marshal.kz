@@ -27,7 +27,7 @@ categories: codelabs
 ## 2. Что вы будете создавать
 
 Вы будете использовать различные компоненты, чтобы сделать приложение Колёса,
-которое извлекает данные из удаленного источника, сохраняет его локально и отображает его пользователю.
+которое извлекает данные из удаленного источника, сохраняет локально и отображает их пользователю.
 
 ### Этапы создания приложения
 
@@ -35,15 +35,15 @@ categories: codelabs
 2. Используйте библиотеку Lifecycle, которая включает LiveData и ViewModel
 3. Используйте библиотеку сохранения данных Room
 
-Запросы в API и UI часть будет заранее доступно в проекте
+Запросы в API и UI часть будут заранее доступны в проекте
 
 ### Что вам понадобится
 
 1. Android Studio 3.0 или новее
-2. Знакомство со зданием Android-приложений и жизненным циклом активности Android
+2. Знакомство с созданием Android-приложений и жизненным циклом активности Android
 3. Базовое знание SQLite
   * Например, вы должны иметь возможность писать операторы SELECT с предложением WHERE.
-  * Базовое знание потоковой обработкой и обработкой асинхронных задач в Android
+  * Базовое знание потоковой обработки и обработки асинхронных задач в Android
 
 ### Скачиваем исходный код
 
@@ -56,7 +56,7 @@ categories: codelabs
 
 ![Architecture](/assets/codelabs/architecture.png)
 
-**UI Controller** - это действия или фрагменты. Единственное задача UI контроллера - это знать, как отображать данные и передавать события UI, такие как нажитие кнопки. UI контроллеры не содержат данных UI, а также не работает с данными напрямую.
+**UI Controller** - это действия или фрагменты. Единственное задача UI контроллера - это знать, как отображать данные и передавать события UI, такие как нажитие кнопки. UI контроллеры не содержат данных UI, а также не работают с данными напрямую.
 
 **ViewModels и LiveData** - эти классы представляют все данные, необходимые для отображения UI.
 
@@ -68,11 +68,11 @@ categories: codelabs
 
 ### Архитектура приложения копии Kolesa
 
-Как в итоге должен выглядеть приложение, которое вы будете разрабатывать
+Как в итоге должно выглядеть приложение, которое вы будете разрабатывать
 
 ![AdvertListActivity and AdvertDetailsActivity](/assets/codelabs/dev-fest-app.png)
 
-Будет 2 Activity (AdvertListActivity и AdvertDetailsActivity) с двумя ViewModel (AdvertListViewModel и AdvertDetailsActivity). Они будут обращаться к классу Repository (AdvertisementRepository), который будет управлять связью между базой данных SQLite и сетевым источником данных. В вашем располежении будет готовый AdvertisementNetworkDataSource в проекте с готовыми данными. AdvertisementNetworkDataSource будет отправлять запросы чтобы получить данные объявления [с замоканного сервера](https://stash.kolesa-team.org/projects/MAPG/repos/sample/). В нем содержится урезанные данные с сайта колёс.
+Будет 2 Activity (AdvertListActivity и AdvertDetailsActivity) с двумя ViewModel (AdvertListViewModel и AdvertDetailsViewModel). Они будут обращаться к классу Repository (AdvertisementRepository), который будет управлять связью между базой данных SQLite и сетевым источником данных. В вашем расположении будет готовый AdvertisementNetworkDataSource в проекте с готовыми данными. AdvertisementNetworkDataSource будет отправлять запросы чтобы получить данные объявления [с замоканного сервера](https://stash.kolesa-team.org/projects/MAPG/repos/sample/). В нем содержится урезанные данные с сайта колёс.
 
 ```json
 [
@@ -104,7 +104,7 @@ categories: codelabs
 ```
 
 В данном code labs вы будете разрабатывать классы обрисованные зелеными линиями.
-Каркасы этих классов уже заготовлены в прокте, который вы скачали ранее.
+Каркасы этих классов уже заготовлены в проекте, который вы скачали ранее.
 
 ![Dev Fest Kolesa Architecture](/assets/codelabs/kolesa-architecture.png)
 
@@ -112,10 +112,10 @@ categories: codelabs
 
 Класс ViewModel  предназначен для содержания и управления данными UI в рамках жизненного цикла. Это позволяет хранить данные во время изменении конфигурации такие как повороты экрана. Разделив данные UI от UI контроллеров, вы можете разделить ответственность в слое Presentation:
 
-* ViewModel будет отвественным за предостовления данных, управление им и хранение состояние UI
-* UI контроллеры будет отвечать за отображение состояние данных.
+* ViewModel будет отвественным за предоставление данных, управление ими и хранение состояния UI
+* UI контроллеры будут отвечать за отображение состояния данных.
 
-ViewModel привязываются к одному UI контроллеру, которым они должны предоставлять данные. Чтобы создать ViewModel требуется классы LifecycleOwner и Lifecycle, который содержится в них:
+ViewModel привязываются к одному UI контроллеру, которому они должны предоставлять данные. Чтобы создать ViewModel требуется классы LifecycleOwner и Lifecycle, который содержится в них:
 
 * Lifecycle - объект который определяет состояние жизненного цикла Android
 * LifecycleOwner - объект который содержит, такие как Activity и Fragment.
@@ -124,12 +124,12 @@ ViewModel привязываются к одному UI контроллеру, 
 
 ### Жизненный цикл ViewModel
 
-Чтобы **ViewModel** мог держать данные вне зависимо от UI контроллера, жизненный цикл у ViewModel отличаются от **LifeCycleOwner**. Ниже приведен разница между жизненным циклом Activity и ViewModel.
+Чтобы **ViewModel** мог держать данные вне зависимо от UI контроллера, жизненный цикл у ViewModel отличается от **LifeCycleOwner**. Ниже приведена разница между жизненным циклом Activity и ViewModel.
 
 ![ViewModel lifecycle](/assets/codelabs/viewmodel-lifecycle.png)
 
 Как мы видим, ViewModel существует до тех пор, пока Activity полностью не уничтожится.
-Для детального изучения ViewModel, вы можете ознакомиться [с данным статьей](https://medium.com/androiddevelopers/viewmodels-a-simple-example-ed5ac416317e).
+Для детального изучения ViewModel, вы можете ознакомиться [с данной статьей](https://medium.com/androiddevelopers/viewmodels-a-simple-example-ed5ac416317e).
 
 ### TASK: Создание ViewModels
 
@@ -149,7 +149,7 @@ class AdvertListViewModel() : ViewModel() {
   fun getAdvertisements(): List<Advertisement> = emptyList()
 }
 ```
-4. Откройте `kz.kolesa.devfest.advertlist.AdvertListActivity` добавьте переменное AdvertListViewModel.
+4. Откройте `kz.kolesa.devfest.advertlist.AdvertListActivity` добавьте переменную AdvertListViewModel.
 ```kotlin
 private lateinit var advertListViewModel: AdvertListViewModel
 ```
@@ -160,7 +160,7 @@ advertListViewModel = ViewModelProviders
         .get(AdvertListViewModel::class.java)
 ```
 
-Когда первый раз создается *AdvertListActivity*, метод `ViewModelProviders.of` вызывается в `onCreate`. Данный метод создаст *AdvertListViewModel*, если еще не был создан. В дальнейшем, когда измененяет конфигурация и пересоздается Activity, *ViewModelProviders.of* вытащит объект, который был создан ранее в *AdvertListActivity*.
+Когда первый раз создается *AdvertListActivity*, метод `ViewModelProviders.of` вызывается в `onCreate`. Данный метод создаст *AdvertListViewModel*, если он еще не был создан. В дальнейшем, когда измененяется конфигурация и пересоздается Activity, *ViewModelProviders.of* вытащит объект, который был создан ранее в *AdvertListActivity*.
 
 ### LiveData
 
@@ -169,15 +169,15 @@ advertListViewModel = ViewModelProviders
 ![Observer pattern](/assets/codelabs/observer.png)
 > Картинка взята с сайта [Refactoring.guru](https://refactoring.guru/ru/design-patterns/observer)
 
-Если брать Observable pattern, LiveData это наш *Subject*, а *наблюдатели* это объекты которые наследуются от [Observer](https://developer.android.com/reference/android/arch/lifecycle/Observer.html). Чтобы подписаться на LiveData требуется предоставить `LifecycleOwner` - LiveData следит за его жизненным циклом и сам отпишет подписчиков при его уничтожение. Вы можете подписываться на LiveData, не предоставляя LifeCycleOwner, но в таком случае вам нужно отписываться от него вручную в нужный момент.
+Если брать Observable pattern, LiveData это наш *Subject*, а *наблюдатели* это объекты которые наследуются от [Observer](https://developer.android.com/reference/android/arch/lifecycle/Observer.html). Чтобы подписаться на LiveData требуется предоставить `LifecycleOwner` - LiveData следит за его жизненным циклом и сам отпишет подписчиков при его уничтожении. Вы можете подписываться на LiveData, не предоставляя LifeCycleOwner, но в таком случае вам нужно отписываться от него вручную в нужный момент.
 
 ### TASK: Создание LiveData
 
-*AdvertDetailsActivity* будет следить за LiveData который будет содержаться в AdvertListViewModel. Обычный LiveData не имеет возможность устанавливать новое значение. Вам понадобится использовать [MutableLiveData](https://developer.android.com/reference/android/arch/lifecycle/MutableLiveData) чтобы могли уведомлять новыми значениями при получения данных от источника данных.
+*AdvertDetailsActivity* будет следить за LiveData, который будет содержаться в AdvertListViewModel. Обычный LiveData не имеет возможность устанавливать новое значение. Вам понадобится использовать [MutableLiveData](https://developer.android.com/reference/android/arch/lifecycle/MutableLiveData) чтобы могли уведомлять новыми значениями при получения данных от источника данных.
 
 Выполните следующие шаги чтобы создать LiveData и наблюдать за ним:
 
-1. В *AdvertListViewModel* добавьте LiveData, который будет содержать список объявлении.
+1. В *AdvertListViewModel* добавьте LiveData, который будет содержать список объявлений.
 ```kotlin
 private val advertListLiveData = MutableLiveData<List<Advertisement>>()
 ```
@@ -197,7 +197,7 @@ advertListViewModel.getAdvertisements.observe(this, Observer { advertisements ->
 advertisements?.let { updateView(it) }
 ```
 
-Таким образом UI контроллер будет получать актуальные данные даже при изменении конфигурации и пересоздания Activity/Fragment. При вызове метода `MutableLiveData#setValue`, LiveData будет уведомлять всех подписчиков с данным значением. В вашем случае за списком объявлении следит *AdvertListActivity*, таким образом мы сможем отобразить данные в UI.
+Таким образом UI контроллер будет получать актуальные данные даже при изменении конфигурации и пересоздании Activity/Fragment. При вызове метода `MutableLiveData#setValue`, LiveData будет уведомлять всех подписчиков с данным значением. В вашем случае за списком объявлений следит *AdvertListActivity*, таким образом мы сможем отобразить данные в UI.
 
 > Важно отметить что у `MutableLiveData` содержатся 2 метода для указания значении в LiveData: [setValue()](https://developer.android.com/reference/android/arch/lifecycle/MutableLiveData.html#setValue(T)) и [postValue()](https://developer.android.com/reference/android/arch/lifecycle/MutableLiveData.html#postValue(T)). Разница в том, что *setValue* можно вызывать только в главном потоке(*UI thread*). А для *postValue()* можно вызывать вне зависимости от контекста текущего потока.
 
