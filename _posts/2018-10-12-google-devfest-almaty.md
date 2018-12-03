@@ -435,7 +435,7 @@ override fun onCreate() {
 
 ### Converter
 
-В классе `RoomAdvertisement` есть такие объекты как `Date`, `List<RoomParameter>`, `List<RoomPhoto>`, `List<RoomPhone>`. Но вы не сможете записать их в БД так как у SQLite [нет указанные типы данных](https://sqlite.org/datatype3.html). Для этого вам необходимо серелисериализовать и десериализовать при обращение к SQL - у Room есть компонент [**@TypeConverter**](https://developer.android.com/reference/android/arch/persistence/room/TypeConverter).
+В классе `RoomAdvertisement` есть такие объекты как `Date`, `List<RoomParameter>`, `List<RoomPhoto>`, `List<RoomPhone>`. Но вы не сможете записать их в БД так как у SQLite [нет указанные типы данных](https://sqlite.org/datatype3.html). Для этого вам необходимо сериализовать и десериализовать при обращение к SQL - у Room есть компонент [**@TypeConverter**](https://developer.android.com/reference/android/arch/persistence/room/TypeConverter).
 
 Для преобразования между типами Java/Kotlin и типами данных, поддерживаемыми SQLite, вам необходимо определить методы преобразования и указать Room о них через аннотацию `@TypeConverter`. Для этого понадобится:
 * Создать класс который содержит методы для конвертации из одного типа в другой тип
@@ -478,7 +478,7 @@ Repository отвечают за обработку данных.
 ![Repository RemoteDataSource](/assets/codelabs/Repository-flow-1.png)
 * Записываем полученные объявлении в KolesaDatabase
 ![Repository KolesaDatabase](/assets/codelabs/Repository-flow-2.png)
-* Ответ от RemoteDataSource оборвется, мы вы обратимся за объявлиями в KolesaDatabase
+* Если ответ от RemoteDataSource оборвется, мы обратимся за объявлиями в KolesaDatabase
 ![Repository KolesaDatabase](/assets/codelabs/Repository-flow-no-connection.png)
 
 ### TASK: Реализация
@@ -553,9 +553,9 @@ class AdvertListViewModel(
     private fun requestAdvertisements() {
         launch(UI) {
             val searchResponse = withContext(DefaultDispatcher) {
-                advertisementRepository.searchAdvertisements().execute()
+                advertisementRepository.searchAdvertisements()
             }
-            advertListLiveData.value = searchResponse.body()
+            advertListLiveData.value = searchResponse
         }
     }
 }
