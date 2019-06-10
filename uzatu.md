@@ -5,3 +5,5 @@ permalink: /uzatu/
 ---
 
 ![Узату той](/assets/uzatu/madina-janibek-uzatu.jpeg)
+
+## Seating arrangements to be announced
