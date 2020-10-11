@@ -5,7 +5,7 @@ permalink: /about/
 ---
 
 ### Android developer from land of steppe.
-Lived in Sapporo for some years. I do talk at [tech conferences]({{ site.baseurl }}{% post_url 2018-07-19-mvvm-from-theories-to-test %}).
+Lived in Sapporo for some years. I do talk at [tech conferences]({% post_url 2018-07-19-mvvm-from-theories-to-test %}).
 
 
 Right now I'm working on classified projects as lead Android developer:
