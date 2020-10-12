@@ -8,7 +8,7 @@ permalink: /about/
 Lived in Sapporo for some years. I do talk at [tech conferences]({% post_url 2018-07-19-mvvm-from-theories-to-test %}).
 
 
-Right now I'm working on classified projects as lead Android developer:
+I worked on classified projects as lead Android developer:
 * [kolesa.kz](httsp://kolesa.kz) - Kazakhstan's larges auto classified service
 * [krisha.kz](https://krisha.kz) - Everything about real estates in Kazakhstan with analytics
 * [market.kz](httsp://market.kz) - Classified for searching goods and services all over Kazakhstan
