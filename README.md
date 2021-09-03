@@ -1,2 +1,2 @@
-# janibekmarshal.com
+# marshal.kz
 Nothing to watch yet
